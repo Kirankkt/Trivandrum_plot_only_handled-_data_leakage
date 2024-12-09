@@ -9,9 +9,10 @@ from sklearn.metrics import mean_squared_error, r2_score
 import category_encoders as ce
 import joblib
 
-# Define function to load data
-@st.cache
+# Load data function with updated caching
+@st.cache_data
 def load_data():
+    # Load the dataset
     data = pd.read_csv("standardized_locations_dataset.csv")
     return data
 
@@ -23,7 +24,7 @@ def add_weighted_features(data):
     data['Weighted_Lakeview'] = (data['lake_proximity'] == 'Lake view').astype(int) * 1.5
     return data
 
-# Define function to compute Mean_Price_per_Cent
+# Add Mean_Price_per_Cent based on training data
 def add_location_mean_price(data):
     data['Price_per_cent'] = data['Price'] / data['Area']
     mean_price_per_location = (
@@ -52,10 +53,10 @@ def predict_price(model, training_data, area, location, beach_proximity, lake_pr
         price_per_cent_mean = training_data['Price'].sum() / training_data['Area'].sum()
 
     # Calculate weights
-    weighted_beachfront = beach_weights[beach_proximity]
-    weighted_seaview = beach_weights[beach_proximity]
-    weighted_lakefront = lake_weights[lake_proximity]
-    weighted_lakeview = lake_weights[lake_proximity] * 0.75
+    weighted_beachfront = beach_weights.get(beach_proximity, 0)
+    weighted_seaview = beach_weights.get(beach_proximity, 0)
+    weighted_lakefront = lake_weights.get(lake_proximity, 0)
+    weighted_lakeview = lake_weights.get(lake_proximity, 0) * 0.75
     area_density = area * (1 if density == 'High' else 0)
 
     # Encode location
@@ -71,18 +72,24 @@ def predict_price(model, training_data, area, location, beach_proximity, lake_pr
         'Weighted_Lakeview': weighted_lakeview,
         'Area_Density': area_density,
         'density': density,
-        'Location': encoded_location.iloc[0]
+        'Location': location
     }])
 
+    # Encode the location for the pipeline
+    input_data['Location'] = target_encoder.transform(input_data[['Location']])
+
     # Predict
-    predicted_price = model.predict(input_data)
+    try:
+        predicted_price = model.predict(input_data)
+    except Exception as e:
+        raise ValueError(f"Error during prediction: {str(e)}")
     return predicted_price[0]
 
 # Streamlit UI
 st.title("Real Estate Price Predictor (Advanced)")
 st.write("Predict the price of plots based on features like location, proximity to amenities, and area.")
 
-# Load data
+# Load and preprocess the data
 data = load_data()
 data = add_weighted_features(data)
 data = add_location_mean_price(data)
@@ -90,13 +97,14 @@ data = add_location_mean_price(data)
 # Load the trained model
 model = joblib.load('xgb_price_model.pkl')  # Save this earlier using joblib
 
-# Inputs
+# User Inputs
 area = st.number_input("Enter the area in cents:", min_value=1.0, step=0.1)
 location = st.selectbox("Select the location:", options=data['Location'].unique())
 beach_proximity = st.selectbox("Select beach proximity:", options=['Inland', 'Sea view', 'Beachfront'])
 lake_proximity = st.selectbox("Select lake proximity:", options=['Inland', 'Lake view', 'Lakefront'])
 density = st.selectbox("Select density:", options=['Low', 'High'])
 
+# Predict Button
 if st.button("Predict Price"):
     try:
         predicted_price = predict_price(model, data, area, location, beach_proximity, lake_proximity, density)

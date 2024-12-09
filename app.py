@@ -59,10 +59,7 @@ def predict_price(model, training_data, area, location, beach_proximity, lake_pr
     weighted_lakeview = lake_weights.get(lake_proximity, 0) * 0.75
     area_density = area * (1 if density == 'High' else 0)
 
-    # Encode location
-    encoded_location = target_encoder.transform(pd.Series([location]))
-
-    # Create a single input DataFrame
+    # Ensure location encoding matches training
     input_data = pd.DataFrame([{
         'Area': area,
         'Mean_Price_per_Cent': price_per_cent_mean,
@@ -75,7 +72,7 @@ def predict_price(model, training_data, area, location, beach_proximity, lake_pr
         'Location': location
     }])
 
-    # Encode the location for the pipeline
+    # Encode location using the same target encoder
     input_data['Location'] = target_encoder.transform(input_data[['Location']])
 
     # Predict

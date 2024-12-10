@@ -92,7 +92,7 @@ data = add_weighted_features(data)
 data = add_location_mean_price(data)
 
 # Load the trained model
-model = joblib.load('xgb_price_model.pkl')  # Save this earlier using joblib
+model = joblib.load('aug_data_model.pkl')  # Save this earlier using joblib
 
 # User Inputs
 area = st.number_input("Enter the area in cents:", min_value=1.0, step=0.1)

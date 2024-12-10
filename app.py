@@ -13,7 +13,7 @@ import joblib
 @st.cache_data
 def load_data():
     # Load the dataset
-    data = pd.read_csv("standardized_locations_dataset.csv")
+    data = pd.read_csv("final_augmented_dataset_1100.csv")
     return data
 
 # Add weighted features based on proximity categories

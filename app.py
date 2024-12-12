@@ -96,7 +96,10 @@ model = joblib.load('aug_data_model.pkl')  # Save this earlier using joblib
 
 # User Inputs
 area = st.number_input("Enter the area in cents:", min_value=1.0, step=0.1)
-location = st.selectbox("Select the location:", options=data['Location'].unique())
+location = st.selectbox(
+    "Select the location:",
+    options=sorted(data['Location'].unique())  # Locations sorted alphabetically
+)
 beach_proximity = st.selectbox("Select beach proximity:", options=['Inland', 'Sea view', 'Beachfront'])
 lake_proximity = st.selectbox("Select lake proximity:", options=['Inland', 'Lake view', 'Lakefront'])
 density = st.selectbox("Select density:", options=['Low', 'High'])
